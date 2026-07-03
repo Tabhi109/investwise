@@ -1,0 +1,1 @@
+This is InvestWise, a project to make investment easier and user more wiser
