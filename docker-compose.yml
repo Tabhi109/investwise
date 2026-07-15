@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - APP_ENV=production
+      - PORT=8080
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/investwise?sslmode=disable
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=investwise-monolith-portfolio-sim-secret-key-321
+      - JWT_TTL_HOURS=24
+      - WORKER_COUNT=8
+      - RISK_FREE_RATE=0.04
+      - MARKET_UPDATE_INTERVAL_MS=1500
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=investwise
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d investwise"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    restart: always
+
+volumes:
+  pgdata:
+  redisdata:

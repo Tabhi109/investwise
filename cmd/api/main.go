@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"log"
+
+	"github.com/Tabhi109/investwise/internal/app"
+)
 
 func main() {
-	fmt.Println("🚀 InvestWise API starting...")
+	application := app.NewApplication()
+
+	if err := application.Run(); err != nil {
+		log.Fatal(err)
+	}
 }
