@@ -143,7 +143,7 @@ onUnmounted(() => {
 // WebSocket Connection Management
 function connectWebSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const wsUrl = window.location.hostname === 'localhost' 
+  const wsUrl = window.location.port === '3000' 
     ? 'ws://localhost:8080/ws' 
     : `${protocol}//${window.location.host}/ws`
 
