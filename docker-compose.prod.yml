@@ -4,11 +4,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      - APP_ENV=${APP_ENV:-production}
-      - PORT=${PORT:-8080}
-      - DATABASE_URL=${DATABASE_URL:-postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-investwise}?sslmode=disable}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
-      - JWT_SECRET=${JWT_SECRET:-investwise-monolith-portfolio-sim-secret-key-321}
+      - APP_ENV=production
+      - PORT=8080
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=${JWT_SECRET}
       - JWT_TTL_HOURS=${JWT_TTL_HOURS:-24}
       - WORKER_COUNT=${WORKER_COUNT:-8}
       - RISK_FREE_RATE=${RISK_FREE_RATE:-0.04}
@@ -19,53 +19,63 @@ services:
       redis:
         condition: service_healthy
     restart: always
+    networks:
+      - investwise-net
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     restart: always
+    networks:
+      - investwise-net
 
   postgres:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_DB=${POSTGRES_DB:-investwise}
-    ports:
-      - "127.0.0.1:5432:5432"
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-investwise}"]
-      interval: 3s
-      timeout: 3s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
       retries: 5
     restart: always
+    networks:
+      - investwise-net
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "127.0.0.1:6379:6379"
     volumes:
       - redisdata:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 3s
-      timeout: 3s
+      interval: 5s
+      timeout: 5s
       retries: 5
     restart: always
+    networks:
+      - investwise-net
 
   nginx:
     image: nginx:alpine
     ports:
-      - "${HTTP_PORT:-8000}:80"
+      - "${HTTP_PORT:-80}:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - app
       - frontend
     restart: always
+    networks:
+      - investwise-net
+
+networks:
+  investwise-net:
+    driver: bridge
 
 volumes:
   pgdata:
